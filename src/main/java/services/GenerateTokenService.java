@@ -9,7 +9,6 @@ import pojo.TokenRequest;
 import utility.PropertyReader;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class GenerateTokenService extends BaseService {
 
@@ -22,7 +21,6 @@ public class GenerateTokenService extends BaseService {
                 .password(propertyReader.getValue("booker.password.qa"))
                 .build();
         setBody(tokenRequest);
-//        removePathParameter("bookingId");
         Response res = executeApi("POST", PathConstant.CREATETOKEN);
         Assert.assertEquals(res.statusCode(), StatusCode.OK);
         String token = res.jsonPath().getString("token");

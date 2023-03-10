@@ -42,26 +42,15 @@ public class BookingService extends BaseService {
 
     public Response partialUpdateBooking(String token, int bookingId, Object payload){
         setBody(payload);
-        setAuthentication(token);
 
         Map<String,Object> bookingIdPathParam = new HashMap<>();
         bookingIdPathParam.put("bookingId",bookingId);
         setPathParameter(bookingIdPathParam);
 
-        Map<String,String> cookie = new HashMap<>();
-        cookie.put("token",token);
-        setCookie(cookie);
-
         return executeApi("PATCH", PathConstant.BOOKING + "/{bookingId}");
     }
 
     public Response deleteBooking(String token, int bookingId){
-        setAuthentication(token);
-
-        Map<String,String> cookie = new HashMap<>();
-        cookie.put("token",token);
-        setCookie(cookie);
-
         return executeApi("DELETE", PathConstant.BOOKING + "/" + bookingId);
     }
 }

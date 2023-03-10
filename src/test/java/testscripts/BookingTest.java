@@ -2,6 +2,7 @@ package testscripts;
 
 import constants.StatusCode;
 import io.restassured.response.Response;
+import org.json.simple.JSONObject;
 import org.testng.Assert;
 import org.testng.annotations.AfterMethod;
 import org.testng.annotations.BeforeMethod;
@@ -24,6 +25,7 @@ public class BookingTest {
     SoftAssert softAssert = new SoftAssert();
     String token;
     GenerateTokenService generateTokenService = new GenerateTokenService();
+    CreateBookingRequest requestPayload;
 
     @BeforeMethod
     public void tokenGeneration(){
@@ -49,7 +51,7 @@ public class BookingTest {
                 .checkout("2023-03-10")
                 .build();
 
-        CreateBookingRequest createBookingRequest = CreateBookingRequest.builder()
+        requestPayload = CreateBookingRequest.builder()
                 .firstname(DataGenerator.getFirstName())
                 .lastname(DataGenerator.getLastName())
                 .totalprice(DataGenerator.getPrice(5))
@@ -58,19 +60,19 @@ public class BookingTest {
                 .additionalneeds(DataGenerator.getAdditionalNeeds())
                 .build();
 
-        response = bookingService.createBooking(createBookingRequest);
+        response = bookingService.createBooking(requestPayload);
         Assert.assertEquals(response.getStatusCode(),StatusCode.OK);
         bookingId = response.jsonPath().getInt("bookingid");
         Assert.assertTrue(bookingId > 0);
 
         CreateBookingResponse createBookingResponse = response.as(CreateBookingResponse.class);
-        softAssert.assertEquals(createBookingResponse.booking.firstname,createBookingRequest.firstname);
-        softAssert.assertEquals(createBookingResponse.booking.lastname,createBookingRequest.lastname);
-        softAssert.assertEquals(createBookingResponse.booking.totalprice,createBookingRequest.totalprice);
-        softAssert.assertEquals(createBookingResponse.booking.depositpaid,createBookingRequest.depositpaid);
-        softAssert.assertEquals(createBookingResponse.booking.bookingdates.checkin,createBookingRequest.bookingdates.checkin);
-        softAssert.assertEquals(createBookingResponse.booking.bookingdates.checkout,createBookingRequest.bookingdates.checkout);
-        softAssert.assertEquals(createBookingResponse.booking.additionalneeds,createBookingRequest.additionalneeds);
+        softAssert.assertEquals(createBookingResponse.booking.firstname,requestPayload.firstname);
+        softAssert.assertEquals(createBookingResponse.booking.lastname,requestPayload.lastname);
+        softAssert.assertEquals(createBookingResponse.booking.totalprice,requestPayload.totalprice);
+        softAssert.assertEquals(createBookingResponse.booking.depositpaid,requestPayload.depositpaid);
+        softAssert.assertEquals(createBookingResponse.booking.bookingdates.checkin,requestPayload.bookingdates.checkin);
+        softAssert.assertEquals(createBookingResponse.booking.bookingdates.checkout,requestPayload.bookingdates.checkout);
+        softAssert.assertEquals(createBookingResponse.booking.additionalneeds,requestPayload.additionalneeds);
         softAssert.assertAll();
     }
 
@@ -78,27 +80,10 @@ public class BookingTest {
     public void getBookingByIdTest(){
         response = bookingService.getReportById(bookingId);
         Assert.assertEquals(response.getStatusCode(), StatusCode.OK);
+        validateGetResponse(response);
     }
 
-    @Test (priority = 4)
-    public void updateBookingTest(){
-        Bookingdates bookingdates = Bookingdates.builder()
-                .checkin("2023-03-10")
-                .checkout("2023-03-15")
-                .build();
-
-        CreateBookingRequest requestPayload = CreateBookingRequest.builder()
-                .firstname(DataGenerator.getFirstName())
-                .lastname(DataGenerator.getLastName())
-                .totalprice(DataGenerator.getPrice(5))
-                .depositpaid(DataGenerator.getBoolean())
-                .bookingdates(bookingdates)
-                .additionalneeds(DataGenerator.getAdditionalNeeds())
-                .build();
-
-        response = bookingService.updateBooking(token, bookingId, requestPayload);
-        Assert.assertEquals(response.getStatusCode(),StatusCode.OK);
-
+    public void validateGetResponse(Response response){
         pojo.updatingResponse.CreateBookingRequest responsePayload = response.as(pojo.updatingResponse.CreateBookingRequest.class);
         softAssert.assertEquals(responsePayload.firstname, requestPayload.firstname);
         softAssert.assertEquals(responsePayload.lastname, requestPayload.lastname);
@@ -110,25 +95,43 @@ public class BookingTest {
         softAssert.assertAll();
     }
 
-//    @Test (priority = 5)
-//    public void partialUpdateTest(){
-//        CreateBookingRequest requestPayload = new CreateBookingRequest();
-//        requestPayload.setFirstname(DataGenerator.getFirstName());
-//        requestPayload.setLastname(DataGenerator.getLastName());
-//
-//        response = bookingService.partialUpdateBooking(token, bookingId, requestPayload);
-//        Assert.assertEquals(response.getStatusCode(),StatusCode.OK);
-//
-//        pojo.updatingResponse.CreateBookingRequest responsePayload = response.as(pojo.updatingResponse.CreateBookingRequest.class);
-//        softAssert.assertEquals(responsePayload.firstname, requestPayload.firstname);
-//        softAssert.assertEquals(responsePayload.lastname, requestPayload.lastname);
-//        softAssert.assertEquals(responsePayload.totalprice, requestPayload.totalprice);
-//        softAssert.assertEquals(responsePayload.depositpaid, requestPayload.depositpaid);
-//        softAssert.assertEquals(responsePayload.bookingdates.checkin, requestPayload.bookingdates.checkin);
-//        softAssert.assertEquals(responsePayload.bookingdates.checkout, requestPayload.bookingdates.checkout);
-//        softAssert.assertEquals(responsePayload.additionalneeds, requestPayload.additionalneeds);
-//        softAssert.assertAll();
-//    }
+    @Test (priority = 4)
+    public void updateBookingTest(){
+        Bookingdates bookingdates = Bookingdates.builder()
+                .checkin("2023-03-10")
+                .checkout("2023-03-15")
+                .build();
+
+        requestPayload = CreateBookingRequest.builder()
+                .firstname(DataGenerator.getFirstName())
+                .lastname(DataGenerator.getLastName())
+                .totalprice(DataGenerator.getPrice(5))
+                .depositpaid(DataGenerator.getBoolean())
+                .bookingdates(bookingdates)
+                .additionalneeds(DataGenerator.getAdditionalNeeds())
+                .build();
+
+        response = bookingService.updateBooking(token, bookingId, requestPayload);
+        Assert.assertEquals(response.getStatusCode(),StatusCode.OK);
+
+        validateGetResponse(response);
+    }
+
+    @Test (priority = 5)
+    public void partialUpdateTest(){
+        requestPayload.setFirstname(DataGenerator.getFirstName());
+        requestPayload.setLastname(DataGenerator.getLastName());
+
+        response = bookingService.partialUpdateBooking(token, bookingId, requestPayload);
+        Assert.assertEquals(response.getStatusCode(),StatusCode.OK);
+
+        pojo.updatingResponse.CreateBookingRequest responsePayload = response.as(pojo.updatingResponse.CreateBookingRequest.class);
+        softAssert.assertEquals(responsePayload.firstname, requestPayload.firstname);
+        softAssert.assertEquals(responsePayload.lastname, requestPayload.lastname);
+        softAssert.assertAll();
+
+        validateGetResponse(response);
+    }
 
     @Test (priority = 6)
     public void deleteBookingTest(){
